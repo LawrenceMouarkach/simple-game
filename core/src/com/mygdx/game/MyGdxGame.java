@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
@@ -33,12 +32,12 @@ public class MyGdxGame implements ApplicationListener {
         static float DAMPING = 0.87f;
 
         enum State {
-            Standing, Walking, Jumping
+            STANDING, WALKING, JUMPING, ATTACKING
         }
 
         final Vector2 position = new Vector2();
         final Vector2 velocity = new Vector2();
-        State state = State.Walking;
+        State state = State.WALKING;
         float stateTime = 0;
         boolean facesRight = true;
         boolean grounded = false;
@@ -123,23 +122,23 @@ public class MyGdxGame implements ApplicationListener {
         koala.stateTime += deltaTime;
 
         // check input and apply to velocity & state
-        if ((Gdx.input.isKeyPressed(Input.Keys.SPACE) || isTouched(0.75f, 1)) && koala.grounded) {
+        if ((Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W) || isTouched(0.75f, 1)) && koala.grounded) {
             koala.velocity.y += Koala.JUMP_VELOCITY;
-            koala.state = Koala.State.Jumping;
+            koala.state = Koala.State.JUMPING;
             koala.grounded = false;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A) || isTouched(0, 0.25f)) {
             koala.velocity.x = -Koala.MAX_VELOCITY;
             if (koala.grounded)
-                koala.state = Koala.State.Walking;
+                koala.state = Koala.State.WALKING;
             koala.facesRight = false;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D) || isTouched(0.25f, 0.5f)) {
             koala.velocity.x = Koala.MAX_VELOCITY;
             if (koala.grounded)
-                koala.state = Koala.State.Walking;
+                koala.state = Koala.State.WALKING;
             koala.facesRight = true;
         }
 
@@ -155,7 +154,7 @@ public class MyGdxGame implements ApplicationListener {
         if (Math.abs(koala.velocity.x) < 1) {
             koala.velocity.x = 0;
             if (koala.grounded)
-                koala.state = Koala.State.Standing;
+                koala.state = Koala.State.STANDING;
         }
 
         // multiply by delta time so we know how far we go
@@ -204,7 +203,7 @@ public class MyGdxGame implements ApplicationListener {
                 if (koala.velocity.y > 0) {
                     koala.position.y = tile.y - Koala.HEIGHT;
                     // we hit a block jumping upwards, let's destroy it!
-                    TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(0        );
+                    TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(2);
                     layer.setCell((int) tile.x, (int) tile.y, null);
                 } else {
                     koala.position.y = tile.y + tile.height;
@@ -260,13 +259,13 @@ public class MyGdxGame implements ApplicationListener {
         // based on the koala state, get the animation frame
         TextureRegion frame = null;
         switch (koala.state) {
-            case Standing:
+            case STANDING:
                 frame = (TextureRegion) stand.getKeyFrame(koala.stateTime);
                 break;
-            case Walking:
+            case WALKING:
                 frame = (TextureRegion) walk.getKeyFrame(koala.stateTime);
                 break;
-            case Jumping:
+            case JUMPING:
                 frame = (TextureRegion) jump.getKeyFrame(koala.stateTime);
                 break;
         }
