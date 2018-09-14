@@ -295,13 +295,23 @@ public class MyGdxGame implements ApplicationListener {
 
     @Override
     public void pause() {
-        // TODO Auto-generated method stub
+        if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE) && isPaused()) { //TODO for mobile screen as well
+
+
+        }
 
     }
 
     @Override
     public void resume() {
-        // TODO Auto-generated method stub
+        if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE) && !isPaused()) { //TODO for mobile screen as well
 
+
+        }
+
+    }
+
+    private static boolean isPaused() {
+        return false; //TODO meaningful isPaused
     }
 }
