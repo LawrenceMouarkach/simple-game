@@ -13,12 +13,18 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.mygdx.game.characters.Koala;
 
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
+import static com.mygdx.game.characters.Koala.KoalaState.DAMPING;
+import static com.mygdx.game.characters.Koala.KoalaState.HEIGHT;
+import static com.mygdx.game.characters.Koala.KoalaState.MAX_VELOCITY;
+import static com.mygdx.game.characters.Koala.KoalaState.State.JUMPING;
+import static com.mygdx.game.characters.Koala.KoalaState.State.STANDING;
+import static com.mygdx.game.characters.Koala.KoalaState.State.WALKING;
+import static com.mygdx.game.characters.Koala.KoalaState.WIDTH;
 
 public class MyGdxGame implements ApplicationListener {
 
@@ -44,16 +50,16 @@ public class MyGdxGame implements ApplicationListener {
         // load the koala frames, split them, and assign them to Animations
         Texture koalaTexture = new Texture("core/assets/koalio.png");
         TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
-        stand = new Animation<>(0, regions[0]);
-        jump = new Animation<>(0, regions[1]);
-        walk = new Animation<>(0.15f, regions[2], regions[3], regions[4]);
+        stand = STANDING.animation();
+        jump = JUMPING.animation();
+        walk = WALKING.animation();
         walk.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         // figure out the width and height of the koala for collision
         // detection and rendering by converting a koala frames pixel
         // size into world units (1 unit == 16 pixels)
-        Koala.WIDTH = 1 / 16f * regions[0].getRegionWidth();
-        Koala.HEIGHT = 1 / 16f * regions[0].getRegionHeight();
+        WIDTH = 1 / 16f * regions[0].getRegionWidth();
+        HEIGHT = 1 / 16f * regions[0].getRegionHeight();
 
         // load the map, set the unit scale to 1/16 (1 unit == 16 pixels)
         map = new TmxMapLoader().load("core/assets/level1.tmx");
@@ -99,41 +105,18 @@ public class MyGdxGame implements ApplicationListener {
             return;
         koala.stateTime += deltaTime;
 
-        // check input and apply to velocity & state
-        if ((Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W) || isTouched(0.75f, 1)) && koala.grounded) {
-            koala.velocity.y += Koala.JUMP_VELOCITY;
-            koala.state = Koala.State.JUMPING;
-            koala.grounded = false;
-        }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A) || isTouched(0, 0.25f)) {
-            koala.velocity.x = -Koala.MAX_VELOCITY;
-            if (koala.grounded)
-                koala.state = Koala.State.WALKING;
-            koala.facesRight = false;
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D) || isTouched(0.25f, 0.5f)) {
-            koala.velocity.x = Koala.MAX_VELOCITY;
-            if (koala.grounded)
-                koala.state = Koala.State.WALKING;
-            koala.facesRight = true;
-        }
-
+        Koala.KoalaState.State.JUMPING.buttonPress(koala);
+        Koala.KoalaState.State.WALKING.buttonPress(koala);
         // apply gravity if we are falling
         koala.velocity.add(0, GRAVITY);
 
         // clamp the velocity to the maximum, x-axis only
-        if (Math.abs(koala.velocity.x) > Koala.MAX_VELOCITY) {
-            koala.velocity.x = Math.signum(koala.velocity.x) * Koala.MAX_VELOCITY;
+        if (Math.abs(koala.velocity.x) > MAX_VELOCITY) {
+            koala.velocity.x = Math.signum(koala.velocity.x) * MAX_VELOCITY;
         }
 
-        // clamp the velocity to 0 if it's < 1, and set the state to standign
-        if (Math.abs(koala.velocity.x) < 1) {
-            koala.velocity.x = 0;
-            if (koala.grounded)
-                koala.state = Koala.State.STANDING;
-        }
+        Koala.KoalaState.State.STANDING.buttonPress(koala);
 
         // multiply by delta time so we know how far we go
         // in this frame
@@ -143,15 +126,15 @@ public class MyGdxGame implements ApplicationListener {
         // if the koala is moving right, check the tiles to the right of it's
         // right bounding box edge, otherwise check the ones to the left
         Rectangle koalaRect = (Rectangle) rectPool.obtain();
-        koalaRect.set(koala.position.x, koala.position.y, Koala.WIDTH, Koala.HEIGHT);
+        koalaRect.set(koala.position.x, koala.position.y, WIDTH, HEIGHT);
         int startX, startY, endX, endY;
         if (koala.velocity.x > 0) {
-            startX = endX = (int) (koala.position.x + Koala.WIDTH + koala.velocity.x);
+            startX = endX = (int) (koala.position.x + WIDTH + koala.velocity.x);
         } else {
             startX = endX = (int) (koala.position.x + koala.velocity.x);
         }
         startY = (int) (koala.position.y);
-        endY = (int) (koala.position.y + Koala.HEIGHT);
+        endY = (int) (koala.position.y + HEIGHT);
         getTiles(startX, startY, endX, endY, tiles);
         koalaRect.x += koala.velocity.x;
         for (Rectangle tile : tiles) {
@@ -165,12 +148,12 @@ public class MyGdxGame implements ApplicationListener {
         // if the koala is moving upwards, check the tiles to the top of it's
         // top bounding box edge, otherwise check the ones to the bottom
         if (koala.velocity.y > 0) {
-            startY = endY = (int) (koala.position.y + Koala.HEIGHT + koala.velocity.y);
+            startY = endY = (int) (koala.position.y + HEIGHT + koala.velocity.y);
         } else {
             startY = endY = (int) (koala.position.y + koala.velocity.y);
         }
         startX = (int) (koala.position.x);
-        endX = (int) (koala.position.x + Koala.WIDTH);
+        endX = (int) (koala.position.x + WIDTH);
         getTiles(startX, startY, endX, endY, tiles);
         koalaRect.y += koala.velocity.y;
         for (Rectangle tile : tiles) {
@@ -179,7 +162,7 @@ public class MyGdxGame implements ApplicationListener {
                 // so it is just below/above the tile we collided with
                 // this removes bouncing 🙂
                 if (koala.velocity.y > 0) {
-                    koala.position.y = tile.y - Koala.HEIGHT;
+                    koala.position.y = tile.y - HEIGHT;
                     // we hit a block jumping upwards, let's destroy it!
                     TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(2);
                     layer.setCell((int) tile.x, (int) tile.y, null);
@@ -201,20 +184,8 @@ public class MyGdxGame implements ApplicationListener {
 
         // Apply damping to the velocity on the x-axis so we don't
         // walk infinitely once a key was pressed
-        koala.velocity.x *= Koala.DAMPING;
+        koala.velocity.x *= DAMPING;
 
-    }
-
-    private static boolean isTouched(float startX, float endX) {
-        // check if any finge is touch the area between startX and endX
-        // startX/endX are given between 0 (left edge of the screen) and 1 (right edge of the screen)
-        for (int i = 0; i < 2; i++) {
-            float x = Gdx.input.getX() / (float) Gdx.graphics.getWidth();
-            if (Gdx.input.isTouched(i) && (x >= startX && x <= endX)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void getTiles(int startX, int startY, int endX, int endY, Array tiles) {
@@ -254,9 +225,9 @@ public class MyGdxGame implements ApplicationListener {
         Batch batch = renderer.getBatch();
         batch.begin();
         if (koala.facesRight) {
-            batch.draw(frame, koala.position.x, koala.position.y, Koala.WIDTH, Koala.HEIGHT);
+            batch.draw(frame, koala.position.x, koala.position.y, WIDTH, HEIGHT);
         } else {
-            batch.draw(frame, koala.position.x + Koala.WIDTH, koala.position.y, -Koala.WIDTH, Koala.HEIGHT);
+            batch.draw(frame, koala.position.x + WIDTH, koala.position.y, -WIDTH, HEIGHT);
         }
         batch.end();
     }
