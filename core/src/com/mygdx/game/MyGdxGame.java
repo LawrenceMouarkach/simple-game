@@ -16,37 +16,15 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import com.mygdx.game.characters.Koala;
 
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 
 public class MyGdxGame implements ApplicationListener {
 
-    /**
-     * The player character, has state and state time,
-     */
-    static class Koala {
-        static float WIDTH;
-        static float HEIGHT;
-        static float MAX_VELOCITY = 10f;
-        static float JUMP_VELOCITY = 40f;
-        static float DAMPING = 0.87f;
-
-        enum State {
-            STANDING, WALKING, JUMPING, ATTACKING
-        }
-
-        final Vector2 position = new Vector2();
-        final Vector2 velocity = new Vector2();
-        State state = State.WALKING;
-        float stateTime = 0;
-        boolean facesRight = true;
-        boolean grounded = false;
-    }
-
     private TiledMap map;
     private OrthogonalTiledMapRenderer renderer;
     private OrthographicCamera camera;
-    private Texture koalaTexture;
     private Animation stand;
     private Animation walk;
     private Animation jump;
@@ -57,18 +35,18 @@ public class MyGdxGame implements ApplicationListener {
             return new Rectangle();
         }
     };
-    private Array<Rectangle> tiles = new Array();
+    private Array<Rectangle> tiles = new Array<>();
 
     private static final float GRAVITY = -2.5f;
 
     @Override
     public void create() {
         // load the koala frames, split them, and assign them to Animations
-        koalaTexture = new Texture("core/assets/koalio.png");
+        Texture koalaTexture = new Texture("core/assets/koalio.png");
         TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
-        stand = new Animation(0, regions[0]);
-        jump = new Animation(0, regions[1]);
-        walk = new Animation(0.15f, regions[2], regions[3], regions[4]);
+        stand = new Animation<>(0, regions[0]);
+        jump = new Animation<>(0, regions[1]);
+        walk = new Animation<>(0.15f, regions[2], regions[3], regions[4]);
         walk.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         // figure out the width and height of the koala for collision
@@ -227,7 +205,7 @@ public class MyGdxGame implements ApplicationListener {
 
     }
 
-    private boolean isTouched(float startX, float endX) {
+    private static boolean isTouched(float startX, float endX) {
         // check if any finge is touch the area between startX and endX
         // startX/endX are given between 0 (left edge of the screen) and 1 (right edge of the screen)
         for (int i = 0; i < 2; i++) {
