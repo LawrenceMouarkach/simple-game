@@ -48,7 +48,7 @@ public class MyGdxGame implements ApplicationListener {
     @Override
     public void create() {
         // load the koala frames, split them, and assign them to Animations
-        Texture koalaTexture = new Texture("core/assets/koalio.png");
+        Texture koalaTexture = new Texture("core/assets/player/koalio.png");
         TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
         stand = STANDING.animation();
         jump = JUMPING.animation();

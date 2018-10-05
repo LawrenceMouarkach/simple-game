@@ -95,7 +95,7 @@ public class Koala {
 
             public abstract Animation animation();
 
-            private static Texture koalaTexture = new Texture("core/assets/koalio.png");
+            private static Texture koalaTexture = new Texture("core/assets/player/koalio.png");
             private static TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
         }
     }
